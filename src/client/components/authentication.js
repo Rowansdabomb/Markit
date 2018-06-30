@@ -221,7 +221,6 @@ class AuthenticationScreen extends Component {
     )
   }
 
-
   render() {
     return (
       <div className='auth-div-container'>
