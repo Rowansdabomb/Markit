@@ -1,0 +1,8 @@
+.header-list {
+  display: flex;
+  flex-direction: row;
+}
+
+.header-element {
+  margin: 0 1rem;
+}
