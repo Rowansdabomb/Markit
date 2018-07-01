@@ -12,7 +12,7 @@ const query = `
 `
 
 const LOGIN = `
-  mutation LoginMutation($email: String!, $password: String!) {
+  mutation Login($email: String!, $password: String!) {
     login(email: $email, password: $password) {
       name
     }
@@ -81,8 +81,8 @@ class AuthenticationScreen extends Component {
 
   login() {
     const {email, password, name} = this.state
-    const query = `mutation CreateMessage($input: UserData) {
-      login(input: $input) {
+    const query = `mutation Login($input: UserData) {
+      loginUser(input: $input) {
         name
       }
     }`;
@@ -118,49 +118,11 @@ class AuthenticationScreen extends Component {
     if (this.state.authType === 'Signup') {
       this.signup()
     } else if (this.state.authType === 'Login') {
-      // query for login
-      axios.post('/api', {query: HELLO})
-      .then(result => console.log(result))
+      this.login()
     } else {
       // error
       console.log('error: authType must be login or signup')
     }
-  }
-
-  onTestSignup() {
-    var email = 'aaa';
-    var password = 'aaa';
-    var name = 'aaa';
-    var query = `mutation CreateMessage($input: UserData) {
-      createUser(input: $input) {
-        name
-      }
-    }`;
-
-    fetch('/api', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        variables: {
-          input: {
-            email,
-            password,
-            name
-          }
-        }
-      })
-    })
-    .then(r => r.json())
-    .then(data => {
-      console.log('data returned:', data)
-      this.setState({
-        returnName: data.data.createUser.name
-      })
-    });
   }
 
   toggleScreenType() {
@@ -211,11 +173,6 @@ class AuthenticationScreen extends Component {
           value={this.state.password}
           onChange={(e) => this.onChange(e)}/>
         <h3>Password Confirmation</h3>
-        {/* <input 
-          name="passwordConfirm" 
-          type="text" 
-          value={this.state.passwordConfirm} 
-          onChange={(e) => this.onChange(e)}/> */}
         <button onClick={() => {this.onClick()}}>Submit</button>
       </div>
     )

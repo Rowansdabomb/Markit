@@ -23,7 +23,8 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-UserSchema.statics.authenticate = function (email, password, callback) {
+UserSchema.statics.authenticate = function (data, callback) {
+  const {email, password} = data
   User.findOne({ email: email }).exec(function (err, user) {
     if (err) {
       return callback(err);

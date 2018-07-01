@@ -15,12 +15,6 @@ const app = express();
 
 app.use(express.static('dist'));
 
-
-// app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(bodyParser.text({ type: 'application/json' }));
-// app.use(bodyParser.json());
-
-
 //use sessions for tracking logins
 app.use(session({
   secret: 'work hard',
@@ -28,25 +22,6 @@ app.use(session({
   saveUninitialized: false,
 // store: new MongoStore({   mongooseConnection: db })
 }));
-
-// // Construct a schema, using GraphQL schema language
-// var schema = buildSchema(`
-//   type Query {
-//     hello: String
-//   },
-
-//   type Mutation {
-//     signup(email: String!, password: String!, name: String!): User
-//   },
-
-//   type User {
-//     id: Int
-//     email: String
-//     password: String
-//     name: String
-//   }
-// `);
-
 
 var SIGNUP = ({email, password, name}) => {
   console.log('SIGNUP')
@@ -65,24 +40,6 @@ var SIGNUP = ({email, password, name}) => {
   });
 }
 
-// // The root provides a resolver function for each API endpoint
-// var root = (request) => ({
-//   hello: () => {
-//     return request.data;
-//   },
-//   signup: () => {
-//     // SIGNUP
-//     return 'name';
-//   },
-// });
-
-// app.use('/api', graphqlHTTP({
-//   schema: schema,
-//   rootValue: root,
-// }));
-
-
-// Construct a schema, using GraphQL schema language
 var schema = buildSchema(`
   input UserData {
     email: String
@@ -102,25 +59,59 @@ var schema = buildSchema(`
 
   type Mutation {
     createUser(input: UserData): User
+    loginUser(input: UserData): User
   }
 `);
-
-// Maps username to content
-var fakeDatabase = {};
 
 var root = {
   hello: () => {
     return 'hello'
   },
   createUser: ({input}) => {
-    // Create a random id for our "database".
-    console.log(input.name)
     console.log(input)
     
+    const userData = {
+      email: input.email,
+      name: input.name,
+      password: input.password
+    }
+    User.create(userData, (error, user) => {
+      if (error) {
+        console.log(error);
+        if (error.code === 11000) {
+          console.log('duplicate');
+          return res.send('duplicate');
+
+        } else {
+          return res.send(error);
+        }
+      }
+    });
     return input;
   },
+  loginUser: ({input}) => {
+    console.log(input)
+    
+    const userData = {
+      email: input.email,
+      password: input.password
+    }
+    User.authenticate(userData, (error, user) => {
+      console.log('auth')
+      if (error || !user) {
+        console.log('error: ' + user);
+        return
+      } else {
+        console.log(user, 'login success')
+        // req.session.userId = user._id;
+        return 
+      }
+    });
 
+    return input;
+  },
 };
+
 
 app.use('/api', graphqlHTTP({
   schema: schema,
