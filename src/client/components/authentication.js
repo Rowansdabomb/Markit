@@ -1,29 +1,5 @@
 import React, { Component } from 'react'
-
-import axios from 'axios'
-
-
-const query = `
-  mutation Signup($email: String, $password: String, $name: String) {
-    signup(email: $email, password: $password, name: $name) {
-      name
-    }
-  }
-`
-
-const LOGIN = `
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
-      name
-    }
-  }
-`
-
-const HELLO = `
-  query {
-    hello
-  }
-`
+import {fetchGraphQL} from '../helpers'
 
 class AuthenticationScreen extends Component {
   constructor(props) {
@@ -33,7 +9,6 @@ class AuthenticationScreen extends Component {
       name: '',
       email: '',
       password: '',
-      // passwordConfirm: '',
       authType: 'Login'
     })
   }
@@ -45,76 +20,98 @@ class AuthenticationScreen extends Component {
     })
   }
 
+  verifyUser() {
+    const query = `query VerifyUser($input: UserData) {
+      verifyUser{
+        name
+        token
+        id
+      }
+    }`;
+
+    fetchGraphQL({
+      query,
+      variables: {}
+    }).then((res) => {
+      console.log(res)
+      console.log('verifyUser', res.data.verifyUser);
+      if(res.error) {
+        this.setState({
+          returnName: 'Error'
+        })
+      }
+    })
+  }
+
   signup() {
     const {email, password, name} = this.state
     const query = `mutation CreateMessage($input: UserData) {
       createUser(input: $input) {
         name
+        token
+        id
       }
     }`;
 
-    fetch('/api', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        variables: {
-          input: {
-            email,
-            password,
-            name
-          }
+    fetchGraphQL({
+      query,
+      variables: {
+        input: {
+          email,
+          password,
+          name
         }
-      })
+      }
+    }).then((res) => {
+      console.log(res)
+      console.log('createUser', res.data.createUser);
+      sessionStorage.setItem('authToken', res.data.createUser.token);
+      if(res.error) {
+        this.setState({
+          returnName: 'Error: could not signup'
+        })
+      } else {
+        this.setState({
+          returnName: res.data.createUser.name
+        })
+      }
     })
-    .then(r => r.json())
-    .then(response => {
-      console.log('data returned:', response)
-      this.setState({
-        returnName: response.data.createUser.name
-      })
-    });
   }
 
   login() {
-    const {email, password, name} = this.state
+    const {email, password} = this.state
     const query = `mutation Login($input: UserData) {
       loginUser(input: $input) {
         name
+        token
+        id
       }
     }`;
-
-    fetch('/api', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        variables: {
-          input: {
-            email,
-            password,
-            name
-          }
+    fetchGraphQL({
+      query, 
+      variables: {
+        input: {
+          email,
+          password
         }
-      })
+      }
+    }).then((res) => {
+      console.log(res)
+      console.log('loginUser', res.data.loginUser)
+      sessionStorage.setItem('authToken', res.data.loginUser.token);
+      if(res.error) {
+        this.setState({
+          returnName: 'Incorrect Email or Password'
+        })
+      } else {
+        this.setState({
+          returnName: res.data.loginUser.name
+        })
+      }
     })
-    .then(r => r.json())
-    .then(response => {
-      console.log('data returned:', response)
-      this.setState({
-        returnName: response.data.createUser.name
-      })
-    });
   }
 
   onClick() {
-    const {email, password, name} = this.state
     if (this.state.authType === 'Signup') {
       this.signup()
     } else if (this.state.authType === 'Login') {
@@ -133,7 +130,7 @@ class AuthenticationScreen extends Component {
 
   renderLogin() {
     return (
-      <div className='auth-div'>
+      <form action="javascript:void(0)" className='auth-div'>
         <h3>Email</h3>
         <input 
           name="email" 
@@ -147,13 +144,13 @@ class AuthenticationScreen extends Component {
           value={this.state.password}
           onChange={(e) => this.onChange(e)}/>
         <button onClick={() => {this.onClick()}}>Submit</button>
-      </div>
+      </form>
     )
   }
 
   renderSignup() {
     return (
-      <div className='auth-div'>
+      <form action="javascript:void(0)" className='auth-div'>
         <h3>Name</h3>
         <input 
           name="name" 
@@ -172,9 +169,8 @@ class AuthenticationScreen extends Component {
           type="text" 
           value={this.state.password}
           onChange={(e) => this.onChange(e)}/>
-        <h3>Password Confirmation</h3>
         <button onClick={() => {this.onClick()}}>Submit</button>
-      </div>
+      </form>
     )
   }
 
@@ -188,8 +184,11 @@ class AuthenticationScreen extends Component {
           onClick={() => {this.toggleScreenType()}} >
           {this.state.authType === 'Login' ? 'Signup' : 'Login'}
         </ button>
-        <button onClick={()=>{this.onClick()}}>Test Query</button>
-        <button onClick={()=>{this.onTestSignup()}}>Test Signup</button>
+        <button 
+          className='button' 
+          onClick={() => {this.verifyUser()}} >
+          testVerify
+        </ button>
         {this.state.returnName}
       </div>
     )
